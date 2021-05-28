@@ -7,9 +7,7 @@
 
 
 /* 514 checklist
-	`as anything in` -> `as anything in`
 	?[] experimentation perhaps
-	hsv/hsl/hcy destruction
 	make some lib animate stuff better with spaces? (better rainbow anyone?)
 	enable TILE_MOVEMENT_MODE and see if break
 	time2text timezone stuff for external? wire?

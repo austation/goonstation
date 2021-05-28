@@ -586,6 +586,8 @@
 	..()
 
 /mob/living/carbon/human/death(gibbed)
+	if (ticker.mode)
+		ticker.mode.on_human_death(src)
 	if(src.mind && src.mind.damned) // Ha you arent getting out of hell that easy.
 		src.hell_respawn()
 		return
@@ -831,6 +833,9 @@
 		if (!antag_removal && src.spell_soulguard)
 			newbody.bioHolder.RemoveAllEffects()
 
+	if(src.traitHolder)
+		newbody.traitHolder = src.traitHolder
+		newbody.traitHolder.owner = newbody
 	// Prone to causing runtimes, don't enable.
 /*	if (src.mutantrace && !src.spell_soulguard)
 		newbody.mutantrace = new src.mutantrace.type(newbody)*/
@@ -864,7 +869,7 @@
 	else
 		src.unkillable = 0
 		src.spell_soulguard = 0
-		src.invisibility = 20
+		APPLY_MOB_PROPERTY(src, PROP_INVISIBILITY, "transform", INVIS_ALWAYS)
 		SPAWN_DBG(2.2 SECONDS) // Has to at least match the organ/limb replacement stuff (Convair880).
 			if (src) qdel(src)
 
@@ -920,7 +925,7 @@
 			if (W)
 				src.click(W, list())
 		if ("equip")
-			src.hud.clicked("invtoggle", src, list()) // this is incredibly dumb, it's also just as dumb as what was here previously
+			src.hud.relay_click("invtoggle", src, list()) // this is incredibly dumb, it's also just as dumb as what was here previously
 		if ("togglethrow")
 			src.toggle_throw_mode()
 		if ("walk")
@@ -1188,9 +1193,9 @@
 	else
 		if (istype(src.wear_id) && src.wear_id:registered != src.real_name)
 			if (src.decomp_stage > 2)
-				src.name = "[src.name_prefix(null, 1)]Unknown (as [src.wear_id:registered])[src.name_suffix(null, 1)]"
+				src.name = "[src.name_prefix(null, 1)]Unknown[src.wear_id:registered ? " (as [src.wear_id:registered])" : ""][src.name_suffix(null, 1)]"
 			else
-				src.name = "[src.name_prefix(null, 1)][src.real_name] (as [src.wear_id:registered])[src.name_suffix(null, 1)]"
+				src.name = "[src.name_prefix(null, 1)][src.real_name][src.wear_id:registered ? " (as [src.wear_id:registered])" : ""][src.name_suffix(null, 1)]"
 		else
 			if (src.decomp_stage > 2)
 				src.name = "[src.name_prefix(null, 1)]Unknown[src.wear_id ? " (as [src.wear_id:registered])" : ""][src.name_suffix(null, 1)]"
@@ -1649,8 +1654,8 @@
 		processed = saylist(messages[2], heard_b, olocs, thickness, italics, processed, 1)
 
 	message = messages[1]
-	if(src.client && !forced)
-		phrase_log.log_phrase("whisper", message)
+	if(src.client)
+		phrase_log.log_phrase(forced ? "say" : "whisper", message)
 	for (var/mob/M in eavesdropping)
 		if (M.say_understands(src, lang_id))
 			var/message_c = stars(message)
@@ -2592,7 +2597,7 @@
 	src.transforming = 1
 	src.canmove = 0
 	src.icon = null
-	src.invisibility = 101
+	APPLY_MOB_PROPERTY(src, PROP_INVISIBILITY, "transform", INVIS_ALWAYS)
 
 	if (ishuman(src))
 		animation = new(src.loc)
@@ -3052,7 +3057,8 @@
 	// If attacker is targeting the chest and a chest item exists, activate it.
 	if (M && M.zone_sel && M.zone_sel.selecting == "chest" && src.chest_item != null && (src.chest_item in src.contents))
 		logTheThing("combat", M, src, "activates [src.chest_item] embedded in [src]'s chest cavity at [log_loc(src)]")
-		src.chest_item.attack_self(src)
+		SPAWN_DBG(0) //might sleep/input/etc, and we don't want to hold anything up
+			src.chest_item.attack_self(src)
 	return
 
 /mob/living/carbon/human/proc/chest_item_dump_reagents_on_flip()
@@ -3093,7 +3099,7 @@
 			else if (src.chest_item.w_class == W_CLASS_BULKY || src.chest_item.w_class == W_CLASS_HUGE)
 				poopingDamage = 50
 				src.show_text("<span class='alert'><B>[src.chest_item] explodes out of your ass, jesus christ!</B></span>")
-				src.changeStatus("stunned", 50)
+				src.changeStatus("stunned", 5 SECONDS)
 				take_bleeding_damage(src, src, 20)
 
 			// Deal out ass damage
@@ -3148,7 +3154,7 @@
 	set category = "Local"
 
 	if (usr == src)
-		src.hud.clicked("invtoggle", src, list()) // ha i copy the dumb thing
+		src.hud.relay_click("invtoggle", src, list()) // ha i copy the dumb thing
 		return
 	if (!src.can_strip(src, 1)) return
 	if (LinkBlocked(src.loc,usr.loc)) return
