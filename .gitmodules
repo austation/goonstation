@@ -1,3 +1,5 @@
 [submodule "+secret"]
 	path = +secret
 	url = https://github.com/austation/ausgoon-secret
+[submodule "https://github.com/austation/ausgoon-secret.git"]
+	url = +secret
